@@ -1,0 +1,61 @@
+name: cityconne
+description: "CityConnect - Smart City Companion mobile app with AR heritage exploration and city issue reporting."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Provider for state management
+  provider: ^6.0.0
+
+  # HTTP requests
+  http: ^1.1.0
+
+  # Image picker
+  image_picker: ^1.0.0
+
+  # Camera
+  camera: ^0.10.0
+
+  # Location services
+  geolocator: ^9.0.0
+
+  # Text-to-speech
+  flutter_tts: ^4.2.5
+
+  # Image manipulation
+  image: ^4.0.0
+
+  # Local storage
+  shared_preferences: ^2.0.0
+
+  # Material Design
+  cupertino_icons: ^1.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Uncomment and add your assets here
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/
+
+  # Uncomment and add your fonts here
+  # fonts:
+  #   - family: CustomFont
+  #     fonts:
+  #       - asset: assets/fonts/CustomFont-Regular.ttf
+  #       - asset: assets/fonts/CustomFont-Bold.ttf
+  #         weight: 700
