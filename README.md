@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # CityConnect
 =======
 # CityConnect - Smart City Companion
