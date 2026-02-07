@@ -51,10 +51,12 @@ cityconne-flutter-code/
 
 ### Prerequisites
 
-- **Flutter**: Install from [flutter.dev](https://flutter.dev/docs/get-started/install)
-- **Python 3.8+**: Install from [python.org](https://www.python.org/)
-- **Android Studio** or **Xcode** (for mobile development)
-- **Anthropic API Key**: Get from [console.anthropic.com](https://console.anthropic.com/)
+| Badge | Description |
+|-------|-------------|
+| <div align="center">![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)</div> | **Flutter**: Install from [flutter.dev](https://flutter.dev/docs/get-started/install) |
+| <div align="center">![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=FFD43B)</div> | **Python 3.8+**: Install from [python.org](https://www.python.org/) |
+| <div align="center">![Android Studio](https://img.shields.io/badge/Android_Studio-3DDC84?style=for-the-badge&logo=android-studio&logoColor=white)</div> | **Android Studio** or ![Xcode](https://img.shields.io/badge/Xcode-147EFB?style=for-the-badge&logo=xcode&logoColor=white) **Xcode** (for mobile development) |
+| <div align="center">![Anthropic](https://img.shields.io/badge/Anthropic-000000?style=for-the-badge&logoColor=white)</div> | **Anthropic API Key**: Get from [console.anthropic.com](https://console.anthropic.com/) |
 
 ### Backend Setup (Python)
 
@@ -289,4 +291,3 @@ For issues and questions:
 ---
 
 **CityConnect** - Making cities more accessible, one report at a time. 🌍♿
->>>>>>> 518e098 (Initial commit: AR Heritage Explorer + City Issue Reporting + OKU accessibility)
