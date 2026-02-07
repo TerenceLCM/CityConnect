@@ -1,8 +1,6 @@
-# CityConnect
-=======
-# CityConnect - Smart City Companion
+# 🌆 CityConnect — Smart City Companion
 
-An inclusive mobile app that combines AR heritage exploration with city issue reporting, designed to be accessible to everyone, including persons with disabilities (OKU).
+> **An inclusive smart city mobile app combining AR heritage exploration and city issue reporting — designed for everyone, including persons with disabilities (OKU).**
 
 ## 🎯 Features
 
