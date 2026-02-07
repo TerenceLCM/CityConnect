@@ -5,8 +5,10 @@ import 'screens/home_screen.dart';
 import 'screens/ar_explorer_screen.dart';
 import 'screens/report_issue_screen.dart';
 import 'screens/accessibility_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+Future<void> main() async {
+  await dotenv.load(fileName: ".env");
   runApp(
     MultiProvider(
       providers: [

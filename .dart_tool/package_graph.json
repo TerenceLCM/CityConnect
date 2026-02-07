@@ -10,6 +10,7 @@
         "camera",
         "cupertino_icons",
         "flutter",
+        "flutter_dotenv",
         "flutter_tts",
         "geolocator",
         "http",
@@ -138,6 +139,13 @@
         "collection",
         "flutter",
         "nested"
+      ]
+    },
+    {
+      "name": "flutter_dotenv",
+      "version": "5.2.1",
+      "dependencies": [
+        "flutter"
       ]
     },
     {

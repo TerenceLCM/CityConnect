@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image/image.dart' as img;
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'package:provider/provider.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'dart:convert';
@@ -21,11 +23,58 @@ class _ARExplorerScreenState extends State<ARExplorerScreen> {
   Map<String, dynamic>? _detectedSite;
   bool _showInfo = false;
   final FlutterTts _tts = FlutterTts();
+  final ImagePicker _picker = ImagePicker();
+  File? _selectedPhoto;
+  String? _photoBase64;
 
   @override
   void initState() {
     super.initState();
     _initializeCamera();
+  }
+
+  Future<void> _pickPhoto() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
+
+      if (image != null) {
+        final bytes = await File(image.path).readAsBytes();
+        setState(() {
+          _selectedPhoto = File(image.path);
+          _photoBase64 = base64Encode(bytes);
+        });
+
+        // You can call your detection API here if you want
+        final result = await ApiService.detectHeritage(_photoBase64!);
+        if (result['detected'] == true && result['site'] != null) {
+          setState(() {
+            _detectedSite = result['site'];
+            _showInfo = true;
+          });
+
+          final accessibility =
+              Provider.of<AccessibilityService>(context, listen: false);
+          if (accessibility.voiceNarration) {
+            _speakSiteInfo(result['site']);
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('No heritage site detected.')),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gallery error: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _initializeCamera() async {
@@ -71,7 +120,8 @@ class _ARExplorerScreenState extends State<ARExplorerScreen> {
         });
 
         // Speak narration if enabled
-        final accessibility = Provider.of<AccessibilityService>(context, listen: false);
+        final accessibility =
+            Provider.of<AccessibilityService>(context, listen: false);
         if (accessibility.voiceNarration) {
           _speakSiteInfo(result['site']);
         }
@@ -79,7 +129,8 @@ class _ARExplorerScreenState extends State<ARExplorerScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('No heritage site detected. Try pointing at a landmark.'),
+              content: Text(
+                  'No heritage site detected. Try pointing at a landmark.'),
             ),
           );
         }
@@ -145,24 +196,24 @@ class _ARExplorerScreenState extends State<ARExplorerScreen> {
           CameraPreview(_cameraController!),
 
           // Top Bar
+          // Gallery Button at bottom-left
           Positioned(
-            top: 60,
-            left: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                'Point camera at a heritage site',
-                style: TextStyle(
+            bottom: 48,
+            left: 16, // small padding from left
+            child: GestureDetector(
+              onTap: _pickPhoto,
+              child: Container(
+                width: 60,
+                height: 60,
+                decoration: const BoxDecoration(
                   color: Colors.white,
-                  fontSize: 16 * fontScale,
-                  fontWeight: FontWeight.w500,
+                  shape: BoxShape.circle,
                 ),
-                textAlign: TextAlign.center,
+                child: const Icon(
+                  Icons.photo_library,
+                  color: Colors.blue,
+                  size: 32,
+                ),
               ),
             ),
           ),

@@ -2,7 +2,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:5000'; // Change to your server URL
+  static const String baseUrl = 'http://172.18.52.86:6000'; // Change to your server URL
 
   // Heritage APIs
   static Future<Map<String, dynamic>> detectHeritage(String base64Image) async {
