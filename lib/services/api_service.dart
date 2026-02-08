@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -90,62 +91,132 @@ class ApiService {
   // ==================== HERITAGE SITES ====================
 
   /// Detect heritage site from image
-  static Future<Map<String, dynamic>> detectHeritage(String base64Image) async {
+  // static Future<Map<String, dynamic>> detectHeritage(String base64Image) async {
+  //   try {
+  //     final response = await http.post(
+  //       Uri.parse('$baseUrl/api/heritage/detect'),
+  //       headers: {'Content-Type': 'application/json'},
+  //       body: jsonEncode({'imageBase64': base64Image}),
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       return jsonDecode(response.body);
+  //     } else {
+  //       throw Exception('Detection failed: ${response.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     throw Exception('Detection error: $e');
+  //   }
+  // }
+
+  // /// Get list of heritage sites
+  // static Future<List<Map<String, dynamic>>> getHeritageList({
+  //   bool wheelchairOnly = false,
+  // }) async {
+  //   try {
+  //     final url = Uri.parse(
+  //       '$baseUrl/api/heritage/list?wheelchairOnly=$wheelchairOnly',
+  //     );
+  //     final response = await http.get(url);
+
+  //     if (response.statusCode == 200) {
+  //       final data = jsonDecode(response.body);
+  //       return List<Map<String, dynamic>>.from(data['sites'] ?? []);
+  //     } else {
+  //       throw Exception('Failed to load heritage sites');
+  //     }
+  //   } catch (e) {
+  //     throw Exception('Error: $e');
+  //   }
+  // }
+
+  // /// Get heritage site details
+  // static Future<Map<String, dynamic>> getHeritageDetails(int siteId) async {
+  //   try {
+  //     final response = await http.get(
+  //       Uri.parse('$baseUrl/api/heritage/$siteId'),
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       return jsonDecode(response.body);
+  //     } else {
+  //       throw Exception('Failed to load heritage details');
+  //     }
+  //   } catch (e) {
+  //     throw Exception('Error: $e');
+  //   }
+  // }
+  static Future<Map<String, dynamic>> detectHeritage(
+      String base64Image, String mimeType) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/heritage/detect'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'imageBase64': base64Image}),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/heritage/detect'),
+            headers: {'Content-Type': 'application/json'},
+            body:
+                jsonEncode({'imageBase64': base64Image, 'mimeType': mimeType}),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      debugPrint('Detect response status: ${response.statusCode}');
+      debugPrint('Detect response body: ${response.body}');
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception('Detection failed: ${response.statusCode}');
+        // Safely parse error, fallback to raw body
+        dynamic errorData;
+        try {
+          errorData = jsonDecode(response.body);
+        } catch (_) {
+          errorData = {'error': response.body};
+        }
+        throw Exception(
+          'Failed to detect heritage (${response.statusCode}): ${errorData['error'] ?? 'Unknown error'}',
+        );
       }
+    } on TimeoutException {
+      throw Exception('Heritage detection request timed out');
     } catch (e) {
-      throw Exception('Detection error: $e');
+      throw Exception('Error detecting heritage: $e');
     }
   }
 
-  /// Get list of heritage sites
-  static Future<List<Map<String, dynamic>>> getHeritageList({
-    bool wheelchairOnly = false,
-  }) async {
+  static Future<List<dynamic>> getHeritageList() async {
     try {
-      final url = Uri.parse(
-        '$baseUrl/api/heritage/list?wheelchairOnly=$wheelchairOnly',
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/heritage/list'),
+        headers: {'Content-Type': 'application/json'},
       );
-      final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return List<Map<String, dynamic>>.from(data['sites'] ?? []);
+        return data['sites'] ?? [];
       } else {
-        throw Exception('Failed to load heritage sites');
+        throw Exception('Failed to get heritage list: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Error: $e');
+      throw Exception('Error getting heritage list: $e');
     }
   }
 
-  /// Get heritage site details
   static Future<Map<String, dynamic>> getHeritageDetails(int siteId) async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/api/heritage/$siteId'),
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception('Failed to load heritage details');
+        throw Exception(
+            'Failed to get heritage details: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Error: $e');
+      throw Exception('Error getting heritage details: $e');
     }
   }
-
   // ==================== ISSUE REPORTS ====================
 
   /// Create a new issue report

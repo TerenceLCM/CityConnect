@@ -47,8 +47,20 @@ class _ARExplorerScreenState extends State<ARExplorerScreen> {
           _photoBase64 = base64Encode(bytes);
         });
 
+        // Detect MIME type
+        final path = image.path.toLowerCase();
+        String mimeType;
+
+        if (path.endsWith('.png')) {
+          mimeType = 'image/png';
+        } else if (path.endsWith('.heic') || path.endsWith('.heif')) {
+          mimeType = 'image/heic';
+        } else {
+          mimeType = 'image/jpeg';
+        }
+
         // You can call your detection API here if you want
-        final result = await ApiService.detectHeritage(_photoBase64!);
+        final result = await ApiService.detectHeritage(_photoBase64!, mimeType);
         if (result['detected'] == true && result['site'] != null) {
           setState(() {
             _detectedSite = result['site'];
@@ -110,8 +122,20 @@ class _ARExplorerScreenState extends State<ARExplorerScreen> {
       // Convert to base64
       final base64Image = base64Encode(bytes);
 
+      // Detect MIME type from file extension
+      final path = image.path.toLowerCase();
+      String mimeType;
+
+      if (path.endsWith('.png')) {
+        mimeType = 'image/png';
+      } else if (path.endsWith('.heic') || path.endsWith('.heif')) {
+        mimeType = 'image/heic';
+      } else {
+        mimeType = 'image/jpeg';
+      }
+
       // Call detection API
-      final result = await ApiService.detectHeritage(base64Image);
+      final result = await ApiService.detectHeritage(base64Image, mimeType);
 
       if (result['detected'] == true && result['site'] != null) {
         setState(() {
