@@ -13,6 +13,7 @@
         "flutter",
         "flutter_dotenv",
         "flutter_tts",
+        "geocoding",
         "geolocator",
         "http",
         "image",
@@ -114,6 +115,16 @@
       "dependencies": [
         "flutter",
         "flutter_web_plugins"
+      ]
+    },
+    {
+      "name": "geocoding",
+      "version": "2.2.2",
+      "dependencies": [
+        "flutter",
+        "geocoding_android",
+        "geocoding_ios",
+        "geocoding_platform_interface"
       ]
     },
     {
@@ -431,6 +442,31 @@
       "version": "0.0.0",
       "dependencies": [
         "flutter"
+      ]
+    },
+    {
+      "name": "geocoding_ios",
+      "version": "2.3.0",
+      "dependencies": [
+        "flutter",
+        "geocoding_platform_interface"
+      ]
+    },
+    {
+      "name": "geocoding_android",
+      "version": "3.3.1",
+      "dependencies": [
+        "flutter",
+        "geocoding_platform_interface"
+      ]
+    },
+    {
+      "name": "geocoding_platform_interface",
+      "version": "3.2.0",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
       ]
     },
     {

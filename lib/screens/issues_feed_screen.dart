@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../services/accessibility_service.dart';
 import '../services/api_service.dart';
 import 'report_issue_screen.dart';
+import 'package:geocoding/geocoding.dart';
 
 class IssuesFeedScreen extends StatefulWidget {
   const IssuesFeedScreen({Key? key}) : super(key: key);
@@ -79,10 +80,25 @@ class _IssuesFeedScreenState extends State<IssuesFeedScreen> {
     }
   }
 
-  String _getLocationString(double? lat, double? lng) {
-    if (lat == null || lng == null) return 'Unknown location';
-    return '${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}';
+  Future<String> _getLocationString(double? lat, double? lng) async {
+  if (lat == null || lng == null) return 'Unknown location';
+  try {
+    final placemarks = await placemarkFromCoordinates(lat, lng);
+    if (placemarks.isNotEmpty) {
+      final p = placemarks.first;
+      final areaParts = [
+        p.subLocality,
+        p.locality,
+        p.administrativeArea,
+      ].where((e) => e != null && e!.isNotEmpty).join(', ');
+      return '${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)} ($areaParts)';
+    }
+  } catch (e, st) {
+    debugPrint('Geocoding failed: $e\n$st');
+    return 'Unknown location';
   }
+  return '${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}';
+}
 
   @override
   Widget build(BuildContext context) {
@@ -307,7 +323,7 @@ class _IssueCard extends StatelessWidget {
   final bool isDarkMode;
   final bool highContrast;
   final String Function(String) formatDate;
-  final String Function(double?, double?) getLocationString;
+  final Future<String> Function(double?, double?) getLocationString;
 
   const _IssueCard({
     required this.issue,
@@ -401,20 +417,25 @@ class _IssueCard extends StatelessWidget {
                 Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text(
-                    getLocationString(
-                      issue['latitude'],
-                      issue['longitude'],
-                    ),
-                    style: TextStyle(
-                      fontSize: 12 * fontScale,
-                      color: Colors.grey[600],
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                child: FutureBuilder<String>(
+                  future: getLocationString(
+                    issue['latitude'],
+                    issue['longitude'],
                   ),
+                  builder: (context, snapshot) {
+                    return Text(
+                      snapshot.data ?? 'Loading location...',
+                      style: TextStyle(
+                        fontSize: 12 * fontScale,
+                        color: Colors.grey[600],
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    );
+                  },
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -437,41 +458,40 @@ class _IssueCard extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 12),
                 child: GestureDetector(
                   onTap: () {
-                    final base64String = issue['photoBase64'] ?? '';
-
-                    if (base64String.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('No image available')),
-                      );
-                      return;
-                    }
-
                     try {
-                      // Remove data:image/... prefix if exists
-                      String cleaned = base64String.contains(',')
-                          ? base64String.split(',')[1]
-                          : base64String;
-                      cleaned = cleaned.replaceAll(RegExp(r'\s+'), '');
+                      String base64String = issue['photoBase64'] ?? '';
 
-                      // Quick length check
-                      if (cleaned.length < 100)
-                        throw Exception('Image data too short or invalid');
+                      if (base64String.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('No image available')),
+                        );
+                        return;
+                      }
 
-                      final bytes = base64Decode(cleaned);
+                      // 🔹 Remove data:image/... prefix if exists
+                      if (base64String.contains(',')) {
+                        base64String = base64String.split(',')[1];
+                      }
+
+                      // 🔹 Remove whitespace / line breaks
+                      base64String = base64String.replaceAll(RegExp(r'\s+'), '');
+
+                      // 🔹 Fix padding
+                      while (base64String.length % 4 != 0) {
+                        base64String += '=';
+                      }
+
+                      final bytes = base64Decode(base64String);
 
                       showDialog(
                         context: context,
                         builder: (context) {
                           return Dialog(
-                            backgroundColor: Colors.transparent,
+                            backgroundColor: Colors.black,
                             child: InteractiveViewer(
                               child: Image.memory(
                                 bytes,
                                 fit: BoxFit.contain,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Center(
-                                      child: Text('Cannot display image'));
-                                },
                               ),
                             ),
                           );
@@ -479,7 +499,7 @@ class _IssueCard extends StatelessWidget {
                       );
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Failed to load image: $e')),
+                        SnackBar(content: Text('Image decode failed: $e')),
                       );
                     }
                   },
@@ -602,3 +622,4 @@ class _IssueCard extends StatelessWidget {
     );
   }
 }
+ 
