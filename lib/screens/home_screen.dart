@@ -109,7 +109,14 @@ class HomeScreen extends StatelessWidget {
                 description: 'Report city problems',
                 icon: Icons.warning_amber,
                 color: Colors.amber,
-                onTap: () => _navigateToTab(2),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ReportIssueScreen(),
+                    ),
+                  );
+                },
                 fontScale: fontScale,
                 highContrast: highContrast,
                 isDarkMode: isDarkMode,
