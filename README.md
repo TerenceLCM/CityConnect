@@ -1,6 +1,8 @@
 # 🌆 CityConnect — Smart City Companion
 
 > **An inclusive smart city mobile app combining AR heritage exploration and city issue reporting — designed for everyone, including persons with disabilities (OKU).**
+### YouTube Application Demo Video Link: https://youtu.be/BDw940f_RGE?si=kk3eCvQlwP4DViDi 
+### YouTube PlymHack 2026 Reflection Video Link: https://youtu.be/y4J1TQn-2Zk?si=FyuM1Joxp7K2O8B5
 
 ## 🎯 Features
 
