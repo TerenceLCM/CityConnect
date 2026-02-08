@@ -229,19 +229,19 @@ class _AccessibilityScreenState extends State<AccessibilityScreen> {
                 const SizedBox(height: 32),
 
                 // Mobility Accessibility
-                sectionHeader('Mobility Accessibility'),
+                // sectionHeader('Mobility Accessibility'),
 
-                _SettingRow(
-                  title: 'Wheelchair-Friendly Filter',
-                  description: 'Show only accessible heritage sites',
-                  value: accessibility.wheelchairFriendlyOnly,
-                  onChanged: (value) => accessibility.setWheelchairFriendly(value),
-                  fontScale: fontScale,
-                  isDarkMode: isDarkMode,
-                  highContrast: highContrast,
-                  isSimplified: isSimplified,
-                ),
-                const SizedBox(height: 32),
+                // _SettingRow(
+                //   title: 'Wheelchair-Friendly Filter',
+                //   description: 'Show only accessible heritage sites',
+                //   value: accessibility.wheelchairFriendlyOnly,
+                //   onChanged: (value) => accessibility.setWheelchairFriendly(value),
+                //   fontScale: fontScale,
+                //   isDarkMode: isDarkMode,
+                //   highContrast: highContrast,
+                //   isSimplified: isSimplified,
+                // ),
+                // const SizedBox(height: 32),
 
                 // Reset Button
                 SizedBox(

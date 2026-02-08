@@ -217,7 +217,9 @@ class _ARExplorerScreenState extends State<ARExplorerScreen> {
       body: Stack(
         children: [
           // Camera View
-          CameraPreview(_cameraController!),
+          SizedBox.expand(
+            child: CameraPreview(_cameraController!),
+          ),
 
           // Top Bar
           // Gallery Button at bottom-left
