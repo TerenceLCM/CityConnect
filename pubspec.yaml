@@ -39,6 +39,10 @@ dependencies:
   # Material Design
   cupertino_icons: ^1.0.0
 
+  dart_jsonwebtoken: ^2.14.0
+  sqflite: ^2.3.0
+  path: ^1.9.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

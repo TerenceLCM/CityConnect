@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
@@ -6,12 +7,52 @@ import 'dart:convert';
 import 'dart:io';
 import '../services/accessibility_service.dart';
 import '../services/api_service.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
 
 class ReportIssueScreen extends StatefulWidget {
   const ReportIssueScreen({Key? key}) : super(key: key);
 
   @override
   State<ReportIssueScreen> createState() => _ReportIssueScreenState();
+}
+
+class DatabaseHelper {
+  static Database? _database;
+
+  static Future<Database> getDatabase() async {
+    if (_database != null) return _database!;
+
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'issues.db');
+
+    _database = await openDatabase(
+      path,
+      version: 1,
+      onCreate: (db, version) async {
+        await db.execute('''
+          CREATE TABLE issue_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            category TEXT,
+            photo_base64 TEXT,
+            latitude REAL,
+            longitude REAL,
+            address TEXT,
+            description TEXT,
+            status TEXT
+          )
+        ''');
+      },
+    );
+
+    return _database!;
+  }
+
+  static Future<void> insertIssue(Map<String, dynamic> issue) async {
+    final db = await getDatabase();
+    await db.insert('issue_reports', issue);
+  }
 }
 
 class _ReportIssueScreenState extends State<ReportIssueScreen> {
@@ -30,7 +71,11 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
     {'value': 'waste_management', 'label': 'Waste Management', 'icon': '🗑️'},
     {'value': 'street_lighting', 'label': 'Street Lighting', 'icon': '💡'},
     {'value': 'public_facilities', 'label': 'Public Facilities', 'icon': '🏛️'},
-    {'value': 'accessibility_issues', 'label': 'Accessibility Issues', 'icon': '♿'},
+    {
+      'value': 'accessibility_issues',
+      'label': 'Accessibility Issues',
+      'icon': '♿'
+    },
     {'value': 'other', 'label': 'Other', 'icon': '📝'},
   ];
 
@@ -61,14 +106,14 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
       // Try to get address (optional)
       try {
         // You can use geocoding package here
-        setState(() =>
-            _address = '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}');
+        setState(() => _address =
+            '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}');
       } catch (e) {
         print('Geocoding error: $e');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context as BuildContext).showSnackBar(
           SnackBar(content: Text('Location error: $e')),
         );
       }
@@ -86,14 +131,31 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
 
       if (image != null) {
         final bytes = await File(image.path).readAsBytes();
+
+        // Decode and resize
+        img.Image? original = img.decodeImage(bytes);
+        if (original == null) throw Exception('Invalid image');
+
+        img.Image resized = img.copyResize(original, width: 1024);
+
+        final compressedBytes = img.encodeJpg(resized, quality: 70);
+
         setState(() {
-          _selectedPhoto = File(image.path);
-          _photoBase64 = base64Encode(bytes);
+          // Use Image.memory instead of File for display
+          _selectedPhoto = null; // no need to keep original file
+          _photoBase64 = base64Encode(compressedBytes);
+        });
+
+        // Optional: save resized file temporarily for Image.file() usage
+        final tempPath = '${Directory.systemTemp.path}/temp_photo.jpg';
+        await File(tempPath).writeAsBytes(compressedBytes);
+        setState(() {
+          _selectedPhoto = File(tempPath);
         });
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(this.context).showSnackBar(
           SnackBar(content: Text('Camera error: $e')),
         );
       }
@@ -109,14 +171,29 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
 
       if (image != null) {
         final bytes = await File(image.path).readAsBytes();
+
+        // Decode image using image package
+        img.Image? original = img.decodeImage(bytes);
+        if (original == null) throw Exception('Invalid image');
+
+        // Resize to max width 1024 (preserve aspect ratio)
+        img.Image resized = img.copyResize(original, width: 1024);
+
+        // Encode to JPEG again with compression
+        final compressedBytes = img.encodeJpg(resized, quality: 70);
+
+        // Save compressed bytes to temporary file for display
+        final tempPath = '${Directory.systemTemp.path}/temp_photo.jpg';
+        await File(tempPath).writeAsBytes(compressedBytes);
+
         setState(() {
-          _selectedPhoto = File(image.path);
-          _photoBase64 = base64Encode(bytes);
+          _selectedPhoto = File(tempPath); // safe file for Image.file()
+          _photoBase64 = base64Encode(compressedBytes); // safe Base64
         });
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(this.context).showSnackBar(
           SnackBar(content: Text('Gallery error: $e')),
         );
       }
@@ -125,14 +202,14 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
 
   Future<void> _submitReport() async {
     if (_photoBase64 == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(this.context).showSnackBar(
         const SnackBar(content: Text('Please take or select a photo')),
       );
       return;
     }
 
     if (_currentLocation == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(this.context).showSnackBar(
         const SnackBar(content: Text('Location is required')),
       );
       return;
@@ -141,6 +218,7 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
     setState(() => _isSubmitting = true);
 
     try {
+      // 1️⃣ Call API
       await ApiService.createIssue(
         category: _selectedCategory,
         photoBase64: _photoBase64!,
@@ -152,25 +230,45 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
             : null,
       );
 
+      // 2️⃣ Insert into local database
+      await DatabaseHelper.insertIssue({
+        'user_id': 1, // Replace with actual user_id from your auth system
+        'category': _selectedCategory,
+        'photo_base64': _photoBase64!,
+        'latitude': _currentLocation!.latitude,
+        'longitude': _currentLocation!.longitude,
+        'address': _address.isNotEmpty ? _address : null,
+        'description': _descriptionController.text.isNotEmpty
+            ? _descriptionController.text
+            : null,
+        'status': 'pending', // default status
+      });
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        // ✅ Show success SnackBar
+        ScaffoldMessenger.of(this.context).showSnackBar(
           const SnackBar(
             content: Text('Report submitted successfully!'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
           ),
         );
 
-        // Reset form
+        // Optional: reset form
         setState(() {
           _selectedPhoto = null;
           _photoBase64 = null;
           _selectedCategory = 'road_damage';
           _descriptionController.clear();
         });
+
+        // ⏱ Delay a little to show the SnackBar, then go back
+        await Future.delayed(const Duration(seconds: 2));
+        if (mounted) Navigator.pop(this.context, true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(this.context).showSnackBar(
           SnackBar(content: Text('Submission failed: $e')),
         );
       }
@@ -178,6 +276,62 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
       setState(() => _isSubmitting = false);
     }
   }
+
+  // Future<void> _submitReport() async {
+  //   if (_photoBase64 == null) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Please take or select a photo')),
+  //     );
+  //     return;
+  //   }
+
+  //   if (_currentLocation == null) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Location is required')),
+  //     );
+  //     return;
+  //   }
+
+  //   setState(() => _isSubmitting = true);
+
+  //   try {
+  //     await ApiService.createIssue(
+  //       category: _selectedCategory,
+  //       photoBase64: _photoBase64!,
+  //       latitude: _currentLocation!.latitude,
+  //       longitude: _currentLocation!.longitude,
+  //       address: _address.isNotEmpty ? _address : null,
+  //       description: _descriptionController.text.isNotEmpty
+  //           ? _descriptionController.text
+  //           : null,
+  //     );
+
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Text('Report submitted successfully!'),
+  //           backgroundColor: Colors.green,
+  //         ),
+  //       );
+
+  //       // Reset form
+  //       setState(() {
+  //         _selectedPhoto = null;
+  //         _photoBase64 = null;
+  //         _selectedCategory = 'road_damage';
+  //         _descriptionController.clear();
+  //       });
+  //     }
+  //   } catch (e) {
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text('Submission failed: $e')),
+  //       );
+  //     }
+  //   } finally {
+  //     setState(() => _isSubmitting = false);
+  //   }
+  // }
 
   @override
   void dispose() {
@@ -203,30 +357,53 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
     return Scaffold(
       backgroundColor: backgroundColor,
       body: SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 32),
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              // Header
-              Text(
-                'Report City Issue',
-                style: TextStyle(
-                  fontSize: 30 * fontScale,
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
-                ),
+              // Header Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Back button
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    color: textColor,
+                    iconSize: 28 * fontScale,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+
+                  // Title (expanded to center)
+                  Expanded(
+                    child: Text(
+                      'Report City Issue',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 30 * fontScale,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                    ),
+                  ),
+
+                  // Placeholder to balance row
+                  SizedBox(width: 48), // same as IconButton width
+                ],
               ),
               const SizedBox(height: 8),
               Text(
                 'Help improve our city by reporting problems',
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16 * fontScale,
                   color: Colors.grey[600],
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 8),
 
               // Photo Section
               Text(
@@ -327,7 +504,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                 children: categories.map((cat) {
                   final isSelected = _selectedCategory == cat['value'];
                   return GestureDetector(
-                    onTap: () => setState(() => _selectedCategory = cat['value']!),
+                    onTap: () =>
+                        setState(() => _selectedCategory = cat['value']!),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -336,7 +514,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                       decoration: BoxDecoration(
                         color: isSelected
                             ? Colors.blue.withOpacity(0.2)
-                            : (isDarkMode ? Colors.grey[800] : Colors.grey[200]),
+                            : (isDarkMode
+                                ? Colors.grey[800]
+                                : Colors.grey[200]),
                         border: Border.all(
                           color: isSelected ? Colors.blue : Colors.transparent,
                           width: 2,

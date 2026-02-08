@@ -1,3 +1,4 @@
+import 'package:cityconne/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/accessibility_service.dart';
@@ -36,16 +37,33 @@ class HomeScreen extends StatelessWidget {
               Center(
                 child: Column(
                   children: [
-                    Semantics(
-                      label: 'CityConnect app title',
-                      child: Text(
-                        'CityConnect',
-                        style: TextStyle(
-                          fontSize: 36 * fontScale,
-                          fontWeight: FontWeight.bold,
-                          color: textColor,
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Center(
+                          child: Text(
+                            'CityConnect',
+                            style: TextStyle(
+                              fontSize: 36 * fontScale,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
                         ),
-                      ),
+                        Positioned(
+                          right: 0,
+                          child: IconButton(
+                            icon: const Icon(Icons.logout),
+                            color: textColor,
+                            tooltip: 'Logout',
+                            onPressed: () async {
+                              await ApiService.logout();
+                              Navigator.of(context)
+                                  .pushReplacementNamed('/login');
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -78,7 +96,7 @@ class HomeScreen extends StatelessWidget {
                 description: 'Scan landmarks with AR',
                 icon: Icons.camera_alt,
                 color: Colors.blue,
-                onTap: () => _navigateToTab(1), 
+                onTap: () => _navigateToTab(1),
                 fontScale: fontScale,
                 highContrast: highContrast,
                 isDarkMode: isDarkMode,
@@ -91,7 +109,7 @@ class HomeScreen extends StatelessWidget {
                 description: 'Report city problems',
                 icon: Icons.warning_amber,
                 color: Colors.amber,
-                onTap: () => _navigateToTab(2), 
+                onTap: () => _navigateToTab(2),
                 fontScale: fontScale,
                 highContrast: highContrast,
                 isDarkMode: isDarkMode,
@@ -104,7 +122,7 @@ class HomeScreen extends StatelessWidget {
                 description: 'Customize your experience',
                 icon: Icons.accessibility,
                 color: Colors.green,
-                onTap: () => _navigateToTab(3), 
+                onTap: () => _navigateToTab(3),
                 fontScale: fontScale,
                 highContrast: highContrast,
                 isDarkMode: isDarkMode,
